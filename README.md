@@ -35,7 +35,7 @@ Aplikasi web sederhana untuk menghasilkan dan mengelola email sementara mengguna
 
 1. **Clone repository**
    ```bash
-   git clone https://github.com/username/temp-mail-integration.git
+   git clone https://github.com/dwinurmijayanto/Temp-Email-Guerrillamail.git
    cd temp-mail-integration
    ```
 
