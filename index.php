@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Temporary Mail - Guerrillamail</title>
+    <title>Temporary Mail</title>
     <style>
         * {
             margin: 0;
@@ -39,7 +39,38 @@
             border-radius: 15px;
             padding: 30px;
             box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            color: #999;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+        }
+        
+        .tab-btn.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
         }
         
         .info-box {
@@ -84,8 +115,8 @@
             border-radius: 5px;
             cursor: pointer;
             font-size: 0.9em;
-            transition: background 0.3s;
             white-space: nowrap;
+            transition: background 0.3s;
         }
         
         .copy-btn:hover {
@@ -106,13 +137,11 @@
         
         .btn:hover {
             background: #5568d3;
-            transform: translateY(-2px);
         }
         
         .btn:disabled {
             background: #ccc;
             cursor: not-allowed;
-            transform: none;
         }
         
         .btn-secondary {
@@ -126,7 +155,6 @@
         .btn-group {
             display: flex;
             gap: 10px;
-            margin-top: 20px;
             flex-wrap: wrap;
         }
         
@@ -147,11 +175,11 @@
         }
         
         .message-list {
-            max-height: 500px;
+            max-height: 400px;
             overflow-y: auto;
             border: 1px solid #ddd;
             border-radius: 8px;
-            margin-bottom: 20px;
+            margin-top: 20px;
         }
         
         .message-item {
@@ -238,12 +266,6 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0,0,0,0.4);
-            animation: fadeIn 0.3s ease;
-        }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
         }
         
         .modal.show {
@@ -251,7 +273,7 @@
         }
         
         .modal-content {
-            background-color: #fefefe;
+            background-color: white;
             margin: 5% auto;
             padding: 20px;
             border-radius: 8px;
@@ -287,19 +309,15 @@
             color: #333;
         }
         
-        .modal-body {
-            margin-bottom: 15px;
-        }
-        
         .modal-field {
             margin-bottom: 15px;
         }
         
         .modal-field label {
-            display: block;
             font-weight: 600;
             color: #667eea;
             margin-bottom: 5px;
+            display: block;
         }
         
         .modal-field p {
@@ -316,235 +334,306 @@
             text-align: center;
             color: #999;
         }
-        
-        .empty-state p {
-            font-size: 1.1em;
-            margin-bottom: 10px;
-        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
             <h1>📧 Temporary Mail</h1>
-            <p>Email sementara gratis dengan Guerrillamail</p>
+            <p>Email sementara gratis</p>
         </div>
         
         <div class="main-card">
-            <div class="info-box">
-                ℹ️ Guerrillamail - Email sementara yang reliable, berlaku 60 menit, support receive & forward
+            <div class="tabs">
+                <button class="tab-btn active" onclick="switchTab('guerrillamail', event)">🐻 Guerrillamail</button>
+                <button class="tab-btn" onclick="switchTab('maildrop', event)">📮 Maildrop</button>
             </div>
             
-            <div class="alert" id="alert"></div>
-            
-            <div class="form-group">
-                <label>📧 Email Anda:</label>
-                <div class="email-display">
-                    <span id="email-display">-</span>
-                    <button class="copy-btn" onclick="copyToClipboard()">📋 Copy</button>
+            <!-- GUERRILLAMAIL -->
+            <div id="guerrillamail" class="tab-content active">
+                <div class="info-box">ℹ️ Email sementara, berlaku 60 menit, support receive & forward</div>
+                <div class="alert" id="alert-gm"></div>
+                
+                <div class="form-group">
+                    <label>📧 Email:</label>
+                    <div class="email-display">
+                        <span id="gm-email">-</span>
+                        <button class="copy-btn" onclick="copyGM()">📋 Copy</button>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn" onclick="generateGM()">🔄 Generate Baru</button>
+                    <button class="btn btn-secondary" onclick="refreshGM()">🔍 Refresh</button>
+                </div>
+                
+                <div>
+                    <label style="margin-top: 20px;">📬 Pesan:</label>
+                    <div class="message-list" id="gm-messages">
+                        <div class="empty-state"><p>Belum ada pesan</p></div>
+                    </div>
                 </div>
             </div>
             
-            <div class="btn-group">
-                <button class="btn" id="generateBtn" onclick="generateEmail()">🔄 Generate Email Baru</button>
-                <button class="btn btn-secondary" id="refreshBtn" onclick="refreshMessages()">🔍 Refresh Pesan</button>
-            </div>
-            
-            <div style="margin-top: 30px;">
-                <label style="margin-bottom: 15px; display: block;">📬 Pesan Masuk:</label>
-                <div class="message-list" id="messageList">
-                    <div class="empty-state">
-                        <p>Belum ada pesan</p>
-                        <small>Generate email dulu, lalu tunggu pesan masuk</small>
+            <!-- MAILDROP -->
+            <div id="maildrop" class="tab-content">
+                <div class="info-box">ℹ️ Email custom instant, support custom nama</div>
+                <div class="alert" id="alert-md"></div>
+                
+                <div class="form-group">
+                    <label>✏️ Custom Email:</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="text" id="md-input" placeholder="nama@maildrop.cc" 
+                               style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <button class="btn" onclick="createMD()">✓ Buat</button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>📧 Email:</label>
+                    <div class="email-display">
+                        <span id="md-email">-</span>
+                        <button class="copy-btn" onclick="copyMD()">📋 Copy</button>
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="btn" onclick="generateMD()">🎲 Random</button>
+                    <button class="btn btn-secondary" onclick="refreshMD()">🔍 Refresh</button>
+                </div>
+                
+                <div>
+                    <label style="margin-top: 20px;">📬 Pesan:</label>
+                    <div class="message-list" id="md-messages">
+                        <div class="empty-state"><p>Belum ada pesan</p></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
-    <!-- Modal untuk baca pesan -->
-    <div id="messageModal" class="modal">
+    <!-- MODAL -->
+    <div id="modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
                 <h2>📖 Baca Pesan</h2>
                 <button class="close-btn" onclick="closeModal()">×</button>
             </div>
-            <div class="modal-body">
-                <div class="modal-field">
-                    <label>Dari:</label>
-                    <p id="modalFrom">-</p>
-                </div>
-                <div class="modal-field">
-                    <label>Subjek:</label>
-                    <p id="modalSubject">-</p>
-                </div>
-                <div class="modal-field">
-                    <label>Waktu:</label>
-                    <p id="modalTime">-</p>
-                </div>
-                <div class="modal-field">
-                    <label>Isi Pesan:</label>
-                    <p id="modalBody">-</p>
-                </div>
+            <div class="modal-field">
+                <label>Dari:</label>
+                <p id="modal-from">-</p>
+            </div>
+            <div class="modal-field">
+                <label>Subjek:</label>
+                <p id="modal-subject">-</p>
+            </div>
+            <div class="modal-field">
+                <label>Waktu:</label>
+                <p id="modal-time">-</p>
+            </div>
+            <div class="modal-field">
+                <label>Isi:</label>
+                <p id="modal-body">-</p>
             </div>
         </div>
     </div>
     
     <script>
-        const API_URL = '/mail-api.php';
-        let currentEmail = null;
-        let currentSid = null;
-        let autoRefreshInterval = null;
-        let allMessages = []; // Simpan semua pesan yang pernah diambil
+        const API = '/mail-api.php';
+        let gmData = { email: null, sid: null, messages: [] };
+        let mdData = { email: null, messages: [] };
+        let gmInterval, mdInterval;
         
-        async function fetchAPI(url) {
+        async function fetch_(url) {
+            const res = await fetch(url);
+            const text = await res.text();
             try {
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: { 'Accept': 'application/json' }
-                });
-                const text = await response.text();
                 return JSON.parse(text);
-            } catch (error) {
-                throw error;
+            } catch (e) {
+                console.error('JSON Parse Error:', text.substring(0, 200));
+                throw new Error('Invalid response from server');
             }
         }
         
-        function showAlert(message, type = 'info') {
-            const alertEl = document.getElementById('alert');
-            alertEl.textContent = message;
-            alertEl.className = `alert show alert-${type}`;
-            setTimeout(() => alertEl.classList.remove('show'), 5000);
+        function switchTab(tab, e) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tab).classList.add('active');
+            e.target.classList.add('active');
         }
         
-        function copyToClipboard() {
-            if (!currentEmail) return;
-            navigator.clipboard.writeText(currentEmail).then(() => {
-                showAlert('✓ Email tersalin ke clipboard!', 'success');
-            });
+        function alert_(type, msg) {
+            const el = type === 'gm' ? document.getElementById('alert-gm') : document.getElementById('alert-md');
+            el.textContent = msg;
+            el.className = `alert show alert-${msg.includes('❌') ? 'error' : msg.includes('✓') ? 'success' : 'info'}`;
+            setTimeout(() => el.classList.remove('show'), 4000);
         }
         
-        async function generateEmail() {
-            const btn = document.getElementById('generateBtn');
+        // GUERRILLAMAIL
+        async function generateGM() {
+            const btn = event.target;
             btn.disabled = true;
-            btn.innerHTML = '<span class="loading"></span>Generating...';
-            
+            btn.innerHTML = '<span class="loading"></span>...';
             try {
-                const data = await fetchAPI(`${API_URL}?action=guerrillamail_generate`);
-                
+                const data = await fetch_(`${API}?action=guerrillamail_generate`);
                 if (data.success) {
-                    currentEmail = data.email;
-                    currentSid = data.sid;
-                    allMessages = []; // Reset pesan saat generate baru
-                    document.getElementById('email-display').textContent = data.email;
-                    showAlert(`✓ Email berhasil dibuat: ${data.email}`, 'success');
-                    
-                    // Clear messages
-                    document.getElementById('messageList').innerHTML = `
-                        <div class="empty-state">
-                            <p>Sedang menunggu pesan...</p>
-                        </div>
-                    `;
-                    
-                    // Auto refresh setiap 3 detik
-                    if (autoRefreshInterval) clearInterval(autoRefreshInterval);
-                    autoRefreshInterval = setInterval(() => {
-                        if (currentEmail && currentSid) {
-                            refreshMessages();
-                        }
-                    }, 3000);
-                    
-                    // Refresh pertama setelah 1 detik
-                    setTimeout(() => refreshMessages(), 1000);
-                } else {
-                    showAlert('❌ Gagal membuat email', 'error');
+                    gmData = { email: data.email, sid: data.sid, messages: [] };
+                    document.getElementById('gm-email').textContent = data.email;
+                    alert_('gm', `✓ ${data.email}`);
+                    if (gmInterval) clearInterval(gmInterval);
+                    gmInterval = setInterval(refreshGM, 3000);
+                    setTimeout(refreshGM, 500);
                 }
-            } catch (error) {
-                showAlert('❌ Error: ' + error.message, 'error');
+            } catch (e) {
+                alert_('gm', '❌ Error: ' + e.message);
             } finally {
                 btn.disabled = false;
-                btn.innerHTML = '🔄 Generate Email Baru';
+                btn.innerHTML = '🔄 Generate Baru';
             }
         }
         
-        async function refreshMessages() {
-            if (!currentEmail || !currentSid) {
-                showAlert('⚠️ Generate email dulu', 'info');
-                return;
-            }
-            
+        async function refreshGM() {
+            if (!gmData.email || !gmData.sid) return;
             try {
-                const data = await fetchAPI(`${API_URL}?action=guerrillamail_messages&email=${currentEmail}&sid=${currentSid}`);
-                
-                const messageList = document.getElementById('messageList');
-                
+                const data = await fetch_(`${API}?action=guerrillamail_messages&email=${gmData.email}&sid=${gmData.sid}`);
                 if (data.messages && data.messages.length > 0) {
-                    // Merge dengan pesan lama, hindari duplikat
-                    data.messages.forEach(newMsg => {
-                        if (!allMessages.find(msg => msg.mail_id === newMsg.mail_id)) {
-                            allMessages.unshift(newMsg); // unshift untuk tambah di awal array
+                    data.messages.forEach(msg => {
+                        if (!gmData.messages.find(m => m.mail_id === msg.mail_id)) {
+                            gmData.messages.unshift(msg);
                         }
                     });
                 }
-                
-                if (allMessages.length === 0) {
-                    messageList.innerHTML = `
-                        <div class="empty-state">
-                            <p>Belum ada pesan</p>
-                            <small>Tunggu pesan masuk atau cek di https://www.guerrillamail.com/</small>
-                        </div>
-                    `;
-                } else {
-                    messageList.innerHTML = allMessages.map(msg => `
-                        <div class="message-item" onclick="readMessage('${msg.mail_id}')">
-                            <div class="message-from">📧 ${msg.mail_from || 'Unknown'}</div>
-                            <div class="message-subject">${msg.mail_subject || '(no subject)'}</div>
-                            <div class="message-excerpt">${msg.mail_excerpt || ''}</div>
-                            <div class="message-time">${msg.mail_date || ''}</div>
-                        </div>
-                    `).join('');
-                }
-            } catch (error) {
-                showAlert('❌ Error: ' + error.message, 'error');
+                renderGM();
+            } catch (e) {}
+        }
+        
+        function renderGM() {
+            const list = document.getElementById('gm-messages');
+            if (gmData.messages.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>Belum ada pesan</p></div>';
+            } else {
+                list.innerHTML = gmData.messages.map(m => `
+                    <div class="message-item" onclick="viewGM('${m.mail_id}')">
+                        <div class="message-from">📧 ${m.mail_from}</div>
+                        <div class="message-subject">${m.mail_subject}</div>
+                        <div class="message-time">${m.mail_date}</div>
+                    </div>
+                `).join('');
             }
         }
         
-        async function readMessage(messageId) {
+        async function viewGM(id) {
             try {
-                const data = await fetchAPI(`${API_URL}?action=guerrillamail_read&sid=${currentSid}&id=${messageId}`);
-                
+                const data = await fetch_(`${API}?action=guerrillamail_read&sid=${gmData.sid}&id=${id}`);
                 if (data.success) {
-                    // Hapus tag HTML dengan regex
-                    const cleanBody = data.mail_body ? data.mail_body.replace(/<[^>]*>/g, '') : '-';
-                    
-                    document.getElementById('modalFrom').textContent = data.mail_from || '-';
-                    document.getElementById('modalSubject').textContent = data.mail_subject || '-';
-                    document.getElementById('modalTime').textContent = new Date(data.mail_timestamp * 1000).toLocaleString('id-ID') || '-';
-                    document.getElementById('modalBody').textContent = cleanBody;
-                    
-                    document.getElementById('messageModal').classList.add('show');
+                    const body = data.mail_body ? data.mail_body.replace(/<[^>]*>/g, '') : '-';
+                    document.getElementById('modal-from').textContent = data.mail_from || '-';
+                    document.getElementById('modal-subject').textContent = data.mail_subject || '-';
+                    document.getElementById('modal-time').textContent = new Date(data.mail_timestamp * 1000).toLocaleString('id-ID');
+                    document.getElementById('modal-body').textContent = body;
+                    document.getElementById('modal').classList.add('show');
                 }
-            } catch (error) {
-                showAlert('❌ Error: ' + error.message, 'error');
+            } catch (e) {
+                alert_('gm', '❌ Error: ' + e.message);
             }
+        }
+        
+        function copyGM() {
+            if (gmData.email) navigator.clipboard.writeText(gmData.email);
+        }
+        
+        // MAILDROP
+        async function generateMD() {
+            try {
+                const data = await fetch_(`${API}?action=maildrop_generate`);
+                if (data.success) {
+                    mdData = { email: data.email, messages: [] };
+                    document.getElementById('md-email').textContent = data.email;
+                    alert_('md', `✓ ${data.email}`);
+                    if (mdInterval) clearInterval(mdInterval);
+                    mdInterval = setInterval(refreshMD, 3000);
+                    setTimeout(refreshMD, 500);
+                }
+            } catch (e) {
+                alert_('md', '❌ Error: ' + e.message);
+            }
+        }
+        
+        function createMD() {
+            const input = document.getElementById('md-input').value.trim();
+            if (!input) { alert_('md', '❌ Masukkan email'); return; }
+            const email = input.includes('@') ? input : input + '@maildrop.cc';
+            mdData = { email, messages: [] };
+            document.getElementById('md-email').textContent = email;
+            document.getElementById('md-input').value = '';
+            alert_('md', `✓ ${email}`);
+            if (mdInterval) clearInterval(mdInterval);
+            mdInterval = setInterval(refreshMD, 3000);
+            setTimeout(refreshMD, 500);
+        }
+        
+        async function refreshMD() {
+            if (!mdData.email) return;
+            try {
+                const mailbox = mdData.email.split('@')[0];
+                const data = await fetch_(`${API}?action=maildrop_messages&mailbox=${mailbox}`);
+                if (data.messages && data.messages.length > 0) {
+                    data.messages.forEach(msg => {
+                        if (!mdData.messages.find(m => m.id === msg.id)) {
+                            mdData.messages.unshift(msg);
+                        }
+                    });
+                }
+                renderMD();
+            } catch (e) {}
+        }
+        
+        function renderMD() {
+            const list = document.getElementById('md-messages');
+            if (mdData.messages.length === 0) {
+                list.innerHTML = '<div class="empty-state"><p>Belum ada pesan</p></div>';
+            } else {
+                list.innerHTML = mdData.messages.map(m => `
+                    <div class="message-item" onclick="viewMD('${m.id}')">
+                        <div class="message-from">📧 ${m.headerfrom || 'Unknown'}</div>
+                        <div class="message-subject">${m.subject || '(no subject)'}</div>
+                        <div class="message-time">${new Date(m.date).toLocaleString('id-ID')}</div>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        async function viewMD(id) {
+            try {
+                const mailbox = mdData.email.split('@')[0];
+                const data = await fetch_(`${API}?action=maildrop_read&mailbox=${mailbox}&id=${id}`);
+                if (data.success && data.message) {
+                    const body = data.message.data || data.message.html || '';
+                    document.getElementById('modal-from').textContent = data.message.headerfrom || '-';
+                    document.getElementById('modal-subject').textContent = data.message.subject || '-';
+                    document.getElementById('modal-time').textContent = new Date(data.message.date).toLocaleString('id-ID') || '-';
+                    document.getElementById('modal-body').textContent = body.replace(/<[^>]*>/g, '');
+                    document.getElementById('modal').classList.add('show');
+                }
+            } catch (e) {
+                alert_('md', '❌ Error: ' + e.message);
+            }
+        }
+        
+        function copyMD() {
+            if (mdData.email) navigator.clipboard.writeText(mdData.email);
         }
         
         function closeModal() {
-            document.getElementById('messageModal').classList.remove('show');
+            document.getElementById('modal').classList.remove('show');
         }
         
-        // Tutup modal saat klik di luar
-        window.onclick = function(event) {
-            const modal = document.getElementById('messageModal');
-            if (event.target == modal) {
-                modal.classList.remove('show');
-            }
-        }
+        window.onclick = (e) => {
+            const modal = document.getElementById('modal');
+            if (e.target === modal) modal.classList.remove('show');
+        };
         
-        // Generate email saat page load
-        window.addEventListener('load', () => {
-            generateEmail();
-        });
+        window.addEventListener('load', generateGM);
     </script>
 </body>
 </html>
