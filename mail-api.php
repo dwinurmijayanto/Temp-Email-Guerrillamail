@@ -51,7 +51,6 @@ class TempMailIntegration {
     
     public static function guerrillamail_read($sid, $messageId) {
         $ch = curl_init();
-        // Gunakan fetch_email dengan sid_token dan email_id
         curl_setopt($ch, CURLOPT_URL, "https://api.guerrillamail.com/ajax.php?f=fetch_email&sid_token=" . urlencode($sid) . "&email_id=" . urlencode($messageId));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
@@ -62,6 +61,34 @@ class TempMailIntegration {
         curl_close($ch);
         
         $data = json_decode($response, true);
+        
+        if ($data) {
+            $body = $data['mail_body'] ?? '';
+            
+            // Hapus header email dengan regex yang benar
+            $body = preg_replace('/^(Received|DKIM-Signature|X-[^:]+|MIME-Version|References|In-Reply-To|Message-ID|Content-Transfer-Encoding):[^\n]*(\n\s+[^\n]*)*/im', '', $body);
+            
+            // Hapus boundary MIME
+            $body = preg_replace('/--[a-f0-9]+(--)?\s*\n/i', '', $body);
+            
+            // Hapus Content-Type headers
+            $body = preg_replace('/Content-Type:[^\n]*\n/i', '', $body);
+            $body = preg_replace('/Content-Disposition:[^\n]*\n/i', '', $body);
+            
+            $body = trim($body);
+            
+            // Hapus HTML tags dengan str_replace (lebih aman)
+            $body = strip_tags($body);
+            
+            // Decode HTML entities
+            $body = html_entity_decode($body, ENT_QUOTES, 'UTF-8');
+            
+            // Bersihkan multiple newlines
+            $body = preg_replace('/\n\n+/', "\n\n", $body);
+            
+            $data['mail_body'] = $body;
+        }
+        
         return [
             "provider" => "Guerrillamail",
             "mail_from" => $data['mail_from'] ?? null,
@@ -87,22 +114,22 @@ class TempMailIntegration {
     
     public static function maildrop_messages($mailbox) {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://maildrop.cc/api/graphql");
+        curl_setopt($ch, CURLOPT_URL, "https://api.maildrop.cc/graphql");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0");
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Content-Type: application/json"
         ]);
         
         $query = json_encode([
-            "query" => "query GetInbox(\$mailbox: String!) { inbox(mailbox: \$mailbox) { id headerfrom subject date } }",
-            "variables" => ["mailbox" => $mailbox]
+            "query" => "query { inbox(mailbox: \"$mailbox\") { id headerfrom subject date } }"
         ]);
+        
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
         
         $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
         curl_close($ch);
         
         $data = json_decode($response, true);
@@ -111,35 +138,63 @@ class TempMailIntegration {
             "provider" => "Maildrop",
             "mailbox" => $mailbox,
             "messages" => $data['data']['inbox'] ?? [],
+            "http_code" => $httpCode,
             "success" => true
         ];
     }
     
     public static function maildrop_read($mailbox, $messageId) {
         $ch = curl_init();
-        curl_setopt($ch, CURLOPT_URL, "https://maildrop.cc/api/graphql");
+        curl_setopt($ch, CURLOPT_URL, "https://api.maildrop.cc/graphql");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-        curl_setopt($ch, CURLOPT_USERAGENT, "Mozilla/5.0");
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
             "Content-Type: application/json"
         ]);
         
         $query = json_encode([
-            "query" => "query GetMessage(\$mailbox: String!, \$id: String!) { message(mailbox: \$mailbox, id: \$id) { id headerfrom subject date textbody htmlbody } }",
-            "variables" => ["mailbox" => $mailbox, "id" => $messageId]
+            "query" => "query { message(mailbox: \"$mailbox\", id: \"$messageId\") { id headerfrom subject date data html } }"
         ]);
+        
         curl_setopt($ch, CURLOPT_POSTFIELDS, $query);
         
         $response = curl_exec($ch);
         curl_close($ch);
         
         $data = json_decode($response, true);
+        $message = $data['data']['message'] ?? null;
+        
+        if ($message) {
+            $body = $message['data'] ?? $message['html'] ?? '';
+            
+            // Hapus header email
+            $body = preg_replace('/^(Received|DKIM-Signature|X-[^:]+|MIME-Version|References|In-Reply-To|Message-ID|Content-Transfer-Encoding):[^\n]*(\n\s+[^\n]*)*/im', '', $body);
+            
+            // Hapus boundary MIME
+            $body = preg_replace('/--[a-f0-9]+(--)?\s*\n/i', '', $body);
+            
+            // Hapus Content-Type headers
+            $body = preg_replace('/Content-Type:[^\n]*\n/i', '', $body);
+            $body = preg_replace('/Content-Disposition:[^\n]*\n/i', '', $body);
+            
+            $body = trim($body);
+            
+            // Hapus HTML tags dengan strip_tags
+            $body = strip_tags($body);
+            
+            // Decode HTML entities
+            $body = html_entity_decode($body, ENT_QUOTES, 'UTF-8');
+            
+            // Bersihkan multiple newlines
+            $body = preg_replace('/\n\n+/', "\n\n", $body);
+            
+            $message['data'] = $body;
+        }
         
         return [
             "provider" => "Maildrop",
-            "message" => $data['data']['message'] ?? null,
+            "message" => $message,
             "success" => true
         ];
     }
